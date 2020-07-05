@@ -60,6 +60,9 @@ import org.springframework.context.annotation.Configuration;
 		FeignHttpClientProperties.class })
 public class FeignAutoConfiguration {
 
+	/**
+	 * 从容器中获取所有的 {@link FeignClientSpecification}
+	 */
 	@Autowired(required = false)
 	private List<FeignClientSpecification> configurations = new ArrayList<>();
 
@@ -68,6 +71,10 @@ public class FeignAutoConfiguration {
 		return HasFeatures.namedFeature("Feign", Feign.class);
 	}
 
+	/**
+	 * 向容器中注入一个 {@link FeignContext}，其中它包含了所有的 {@link FeignClientSpecification}
+	 * @return
+	 */
 	@Bean
 	public FeignContext feignContext() {
 		FeignContext context = new FeignContext();

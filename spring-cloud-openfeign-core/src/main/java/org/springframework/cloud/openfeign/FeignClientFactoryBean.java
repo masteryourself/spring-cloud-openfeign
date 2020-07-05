@@ -81,6 +81,7 @@ class FeignClientFactoryBean
 	}
 
 	protected Feign.Builder feign(FeignContext context) {
+		// 获取每个 FeignContext 上下文对应的 FeignLoggerFactory
 		FeignLoggerFactory loggerFactory = get(context, FeignLoggerFactory.class);
 		Logger logger = loggerFactory.create(this.type);
 
@@ -92,16 +93,18 @@ class FeignClientFactoryBean
 				.decoder(get(context, Decoder.class))
 				.contract(get(context, Contract.class));
 		// @formatter:on
-
+		// 给 FeignContext 配置属性值
 		configureFeign(context, builder);
 
 		return builder;
 	}
 
 	protected void configureFeign(FeignContext context, Feign.Builder builder) {
+		// 获取 FeignClient 对应的配置文件
 		FeignClientProperties properties = this.applicationContext
 				.getBean(FeignClientProperties.class);
 		if (properties != null) {
+			// 配置默认的属性值
 			if (properties.isDefaultToProperties()) {
 				configureUsingConfiguration(context, builder);
 				configureUsingProperties(
@@ -217,6 +220,8 @@ class FeignClientFactoryBean
 	}
 
 	protected <T> T get(FeignContext context, Class<T> type) {
+		// 注意 context 类型是 FeignContext，它继承自 NamedContextFactory，每一个 NamedContextFactory 都包含一个 ApplicationContext（Spring 应用上下文）
+		// contextId 是微服务的名称，即每一个微服务都对应一个 FeignContext，即对应一个 Spring 应用上下文，以此做到配置环境隔离
 		T instance = context.getInstance(this.contextId, type);
 		if (instance == null) {
 			throw new IllegalStateException(
@@ -253,10 +258,13 @@ class FeignClientFactoryBean
 	 * information
 	 */
 	<T> T getTarget() {
+		// 从容器中获取 FeignContext，其中它包含了所有的 FeignClientSpecification  配置类
 		FeignContext context = this.applicationContext.getBean(FeignContext.class);
+		// 创建 feign 对应的上下文容器
 		Feign.Builder builder = feign(context);
-
+		// 判断是否是 url 直连
 		if (!StringUtils.hasText(this.url)) {
+			// 判断是否需要添加 http:// 协议
 			if (!this.name.startsWith("http")) {
 				this.url = "http://" + this.name;
 			}
@@ -264,9 +272,11 @@ class FeignClientFactoryBean
 				this.url = this.name;
 			}
 			this.url += cleanPath();
+			// 非 url 直连，会使用负载均衡
 			return (T) loadBalance(builder, context,
 					new HardCodedTarget<>(this.type, this.name, this.url));
 		}
+		// 这里为 url 直连逻辑
 		if (StringUtils.hasText(this.url) && !this.url.startsWith("http")) {
 			this.url = "http://" + this.url;
 		}
